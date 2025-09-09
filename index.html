@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BFS Traversal Animation with Arrow</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+    circle {
+      fill: #6c63ff;
+      stroke: #333;
+      stroke-width: 2px;
+    }
+    line {
+      stroke: #aaa;
+      stroke-width: 2px;
+    }
+    text {
+      font-size: 14px;
+      font-weight: bold;
+      fill: white;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    #controls {
+      margin: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #5146d6;
+    }
+    #output {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    #orderLabel {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #444;
+    }
+    .arrow {
+      fill: red;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="startBFS(0)">Start BFS Order 1</button>
+    <button onclick="startBFS(1)">Start BFS Order 2</button>
+    <button onclick="startBFS(2)">Start BFS Order 3</button>
+  </div>
+  <svg width="700" height="400"></svg>
+  <div id="orderLabel"></div>
+  <div id="output">BFS Traversal: </div>
+
+  <script>
+    const svg = d3.select("svg");
+
+    // Define nodes and edges
+    const nodes = [
+      { id: "A", x: 350, y: 50 },
+      { id: "B", x: 200, y: 150 },
+      { id: "C", x: 350, y: 150 },
+      { id: "D", x: 500, y: 150 },
+      { id: "E", x: 150, y: 250 },
+      { id: "F", x: 250, y: 250 },
+      { id: "G", x: 350, y: 250 },
+      { id: "H", x: 450, y: 250 }
+    ];
+
+    const edges = [
+      ["A","B"],["A","C"],["A","D"],
+      ["B","E"],["B","F"],
+      ["C","G"],
+      ["D","H"]
+    ];
+
+    // Draw edges
+    svg.selectAll("line")
+      .data(edges)
+      .enter()
+      .append("line")
+      .attr("x1", d => nodes.find(n => n.id === d[0]).x)
+      .attr("y1", d => nodes.find(n => n.id === d[0]).y)
+      .attr("x2", d => nodes.find(n => n.id === d[1]).x)
+      .attr("y2", d => nodes.find(n => n.id === d[1]).y)
+      .attr("stroke", "#aaa");
+
+    // Draw nodes
+    const g = svg.selectAll("g")
+      .data(nodes)
+      .enter()
+      .append("g");
+
+    g.append("circle")
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y)
+      .attr("r", 25);
+
+    g.append("text")
+      .attr("x", d => d.x)
+      .attr("y", d => d.y)
+      .text(d => d.id);
+
+    // Arrow marker
+    const arrow = svg.append("polygon")
+      .attr("points", "0,-5 15,0 0,5")
+      .attr("class", "arrow")
+      .style("opacity", 0);
+
+    // 3 main BFS orders
+    const bfsOrders = [
+      { label: "Order 1", seq: ["A","B","C","D","E","F","G","H"] },
+      { label: "Order 2", seq: ["A","B","C","D","F","E","G","H"] },
+      { label: "Order 3", seq: ["A","C","B","D","G","E","F","H"] }
+    ];
+
+    const orderLabel = document.getElementById("orderLabel");
+    const outputDiv = document.getElementById("output");
+
+    function startBFS(orderIndex) {
+      let order = bfsOrders[orderIndex];
+      orderLabel.innerHTML = "<b>Showing " + order.label + ":</b>";
+      outputDiv.innerHTML = "BFS Traversal: "; // reset
+      d3.selectAll("circle").attr("fill", "#6c63ff");
+      d3.selectAll("line").attr("stroke", "#aaa").attr("stroke-width", 2);
+      arrow.style("opacity", 0);
+
+      // Animate traversal
+      order.seq.forEach((nodeId, i) => {
+        setTimeout(() => {
+          // Move arrow
+          let pos = nodes.find(n => n.id === nodeId);
+          arrow.transition().duration(300)
+            .attr("transform", `translate(${pos.x+35},${pos.y})`)
+            .style("opacity", 1);
+
+          // Highlight node
+          d3.selectAll("circle")
+            .filter(d => d.id === nodeId)
+            .transition()
+            .duration(300)
+            .attr("fill", "orange");
+
+          // Update output
+          outputDiv.innerHTML += " " + nodeId;
+
+          // Highlight edge from previous node (if connected)
+          if (i > 0) {
+            let prev = order.seq[i-1];
+            svg.selectAll("line")
+              .filter(d => (d[0] === prev && d[1] === nodeId) || (d[0] === nodeId && d[1] === prev))
+              .transition()
+              .duration(400)
+              .attr("stroke", "red")
+              .attr("stroke-width", 4);
+          }
+        }, i * 900); // short delay
+      });
+    }
+  </script>
+</body>
+</html>
